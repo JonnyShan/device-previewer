@@ -78,6 +78,7 @@
   .seg button{border:0;background:transparent;border-radius:7px;padding:7px 10px;font-size:12.5px}
   .seg button:hover{background:#283242}
   .seg button.on{background:var(--accent-2);color:#fff}
+  .seg button.big{font-size:22px;font-weight:600;padding:12px 20px}
   .seg .sep{width:1px;height:18px;background:var(--line-2)}
 
   .mini-field{display:flex;align-items:center;gap:5px;background:var(--bg-3);border:1px solid var(--line-2);border-radius:10px;padding:4px 6px}
@@ -240,8 +241,8 @@
 
   <div class="controls">
     <div class="seg">
-      <button id="rotateAll" title="Rotate all phones &amp; tablets">⟳ Rotate</button>
-      <button id="barsToggle" title="Show/hide the browser URL bar on every phone &amp; tablet">▭ URL bar</button>
+      <button id="rotateAll" class="big" title="Rotate all phones &amp; tablets">⟳ Landscape / Portrait</button>
+      <button id="barsToggle" class="big" title="Show/hide the browser URL bar on every phone &amp; tablet">▭ URL bar</button>
       <span class="sep"></span>
       <button id="allOn">All</button>
       <button id="allOff">None</button>
