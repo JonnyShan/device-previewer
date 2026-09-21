@@ -77,6 +77,7 @@
   .seg{display:flex;align-items:center;gap:6px;background:var(--bg-3);border:1px solid var(--line-2);border-radius:10px;padding:3px}
   .seg button{border:0;background:transparent;border-radius:7px;padding:7px 10px;font-size:12.5px}
   .seg button:hover{background:#283242}
+  .seg button.on{background:var(--accent-2);color:#fff}
   .seg .sep{width:1px;height:18px;background:var(--line-2)}
 
   .mini-field{display:flex;align-items:center;gap:5px;background:var(--bg-3);border:1px solid var(--line-2);border-radius:10px;padding:4px 6px}
@@ -240,7 +241,7 @@
   <div class="controls">
     <div class="seg">
       <button id="rotateAll" title="Rotate all phones &amp; tablets">⟳ Rotate</button>
-      <button id="barsToggle" title="Show/hide the browser URL bar on every phone &amp; tablet (portrait)">▭ URL bar</button>
+      <button id="barsToggle" title="Show/hide the browser URL bar on every phone &amp; tablet">▭ URL bar</button>
       <span class="sep"></span>
       <button id="allOn">All</button>
       <button id="allOff">None</button>
@@ -451,13 +452,17 @@
 
   // Which browser chrome (if any) a card shows. The Chrome vs Safari row always has it;
   // other phones/tablets get it via the URL bar toggle.
-  // ponytail: portrait only — landscape toolbar heights differ per browser; add a landscape table if needed.
+  // ponytail: landscape phones use rough single-bar heights (Safari compact top bar ~50, Chrome + status ~80).
+  const LAND = { safari:50, chrome:80 };
   function barSpec(c){
     const d = c.d;
     if(d.browserBar) return { bar:d.browserBar, tone:d.browserTone, visible:d.visible };
-    if(!showBars || c.rot || !BAR[d.kind]) return null;
+    if(!showBars || !BAR[d.kind]) return null;
     const tone = (d.kind === 'iphone' || d.kind === 'iphonese' || /^ipad/.test(d.id)) ? 'safari' : 'chrome';
-    return { bar: tone === 'safari' && d.kind !== 'tablet' ? 'bottom' : 'top', tone, visible: d.h - BAR[d.kind][tone] };
+    const landPhone = c.rot && d.kind !== 'tablet';
+    const eaten = landPhone ? LAND[tone] : BAR[d.kind][tone];
+    const bar = tone === 'safari' && d.kind !== 'tablet' && !landPhone ? 'bottom' : 'top';
+    return { bar, tone, visible: effDims(c).h - eaten };
   }
 
   /* ---------- Build one device card ---------- */
