@@ -133,6 +133,8 @@
   .row-track::-webkit-scrollbar-thumb{background:#28313d;border-radius:99px;border:2px solid var(--bg)}
   .row-track::-webkit-scrollbar-thumb:hover{background:#3a4654}
 
+  .row[data-id="popular"] .row-track{display:grid;grid-template-columns:repeat(3,max-content);justify-items:center;row-gap:34px}
+
   .device{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px}
   .viewport{position:relative}
   .shell{position:absolute;top:0;left:0;transform-origin:top left;will-change:transform}
@@ -562,7 +564,7 @@
 
   /* ---------- Rows + chips ---------- */
   function buildRow(def){
-    const row = el('div','row');
+    const row = el('div','row'); row.dataset.id = def.id;
     const head = el('div','row-head');
     const t = el('span','r-title'); t.textContent = def.title;
     const cnt = el('span','r-count');
