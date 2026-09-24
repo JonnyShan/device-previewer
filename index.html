@@ -325,10 +325,11 @@
 
   // Browser UI height (status bar + toolbars) eaten per kind/browser, portrait, toolbars showing.
   // Taken from the Chrome vs Safari row measurements below.
-  // iPhone Safari figures measured off a real iPhone 17 Pro Max screenshot (Sep 2026):
-  // ~62px status bar + ~83px bottom bar incl. home indicator. Others are still estimates.
+  // iPhone Safari measured on a real handset (Sep 2026): 430x932 screen, 775 usable
+  // with toolbars showing => 157px. Large viewport (bars hidden) was 815.
+  // Everything else here is still an estimate.
   const BAR = {
-    iphone:   { safari:145, chrome:145 },
+    iphone:   { safari:157, chrome:165 },
     iphonese: { safari:114, chrome:66  },
     android:  { chrome:134 },
     tablet:   { safari:100, chrome:87  },
@@ -370,8 +371,8 @@
       { id:'pixtab',    name:'Pixel Tablet',   w:1280, h:800,  kind:'tablet' },
     ]},
     { id:'browsers', title:'Mobile browsers — Chrome vs Safari (visible viewport)', devices:[
-      { id:'ios15saf', name:'iPhone 15 · Safari',  w:393, h:852,  kind:'iphone',   visible:707,  browserBar:'bottom', browserTone:'safari' },
-      { id:'ios15chr', name:'iPhone 15 · Chrome',  w:393, h:852,  kind:'iphone',   visible:707,  browserBar:'top',    browserTone:'chrome' },
+      { id:'ios15saf', name:'iPhone 15 · Safari',  w:393, h:852,  kind:'iphone',   visible:695,  browserBar:'bottom', browserTone:'safari' },
+      { id:'ios15chr', name:'iPhone 15 · Chrome',  w:393, h:852,  kind:'iphone',   visible:687,  browserBar:'top',    browserTone:'chrome' },
       { id:'iossesaf', name:'iPhone SE · Safari',  w:375, h:667,  kind:'iphonese', visible:553,  browserBar:'bottom', browserTone:'safari' },
       { id:'iossechr', name:'iPhone SE · Chrome',  w:375, h:667,  kind:'iphonese', visible:601,  browserBar:'top',    browserTone:'chrome' },
       { id:'px8chr',   name:'Pixel 8 · Chrome',    w:412, h:915,  kind:'android',  visible:781,  browserBar:'top',    browserTone:'chrome' },
