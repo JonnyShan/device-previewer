@@ -134,6 +134,9 @@
   .row-track::-webkit-scrollbar-thumb:hover{background:#3a4654}
 
   .row[data-id="popular"] .row-track{flex-wrap:wrap;justify-content:center;overflow-x:hidden;row-gap:34px}
+  .row[data-id="popular"] .device-label{width:100%}
+  .row[data-id="popular"] .device-label .name,
+  .row[data-id="popular"] .device-label .dims{white-space:normal;overflow-wrap:anywhere}
 
   .device{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px}
   .viewport{position:relative}
@@ -152,13 +155,12 @@
   .br-status .br-sig{font-weight:500;opacity:.75;letter-spacing:.5px}
   .br-bar{display:flex;align-items:center;gap:8px;padding:0 12px}
   .br-bar .br-ic{flex:0 0 auto;font-size:14px;opacity:.65;width:20px;text-align:center}
-  .br-addr{flex:1 1 auto;background:#fff;border:1px solid #e0e0e6;border-radius:999px;padding:6px 12px;font-size:13px;color:#3c4043;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
-  .br-status.safari,.br-bar.safari{background:#f7f7f9;color:#111}
-  .br-status.chrome,.br-bar.chrome{background:#f1f3f4;color:#202124}
-  .br-bar.safari{border-top:1px solid #dadce0}
-  .br-bar.chrome{border-bottom:1px solid #dadce0}
-  .br-status.safari{border-bottom:1px solid #ececf0}
-  .br-status.chrome{border-bottom:1px solid #e4e6e8}
+  .br-addr{flex:1 1 auto;background:#2c2c2e;border:1px solid #3a3a3c;border-radius:999px;padding:6px 12px;font-size:13px;color:#e6e6ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+  /* iOS/Android dark chrome — matches what a dark page actually shows */
+  .br-status.safari,.br-bar.safari{background:#000;color:#fff}
+  .br-status.chrome,.br-bar.chrome{background:#1c1c1e;color:#f1f1f3}
+  .br-bar.safari{background:#1c1c1e}
+  .br-bar.chrome{border-bottom:1px solid #2c2c2e}
 
   .pop-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 30px 4px}
   .pop-btn{font-size:17px;font-weight:700;padding:14px 24px;border-radius:12px;border:2px solid #3f5d92;background:#1f3a63;color:#dce8ff}
@@ -316,12 +318,17 @@
 
   // Browser UI height (status bar + toolbars) eaten per kind/browser, portrait, toolbars showing.
   // Taken from the Chrome vs Safari row measurements below.
+  // iPhone Safari figures measured off a real iPhone 17 Pro Max screenshot (Sep 2026):
+  // ~62px status bar + ~83px bottom bar incl. home indicator. Others are still estimates.
   const BAR = {
-    iphone:   { safari:193, chrome:145 },
+    iphone:   { safari:145, chrome:145 },
     iphonese: { safari:114, chrome:66  },
     android:  { chrome:134 },
     tablet:   { safari:100, chrome:87  },
   };
+
+  // Status bar (clock/battery) height per kind — the rest of BAR is the browser's own toolbar.
+  const STATUS = { iphone:62, iphonese:20, android:26, tablet:24 };
 
   const ROWS = [
     // ponytail: hand-picked from AU/NZ share (Apple ~61%, Samsung ~25%, 2026); refresh yearly.
@@ -356,7 +363,7 @@
       { id:'pixtab',    name:'Pixel Tablet',   w:1280, h:800,  kind:'tablet' },
     ]},
     { id:'browsers', title:'Mobile browsers — Chrome vs Safari (visible viewport)', devices:[
-      { id:'ios15saf', name:'iPhone 15 · Safari',  w:393, h:852,  kind:'iphone',   visible:659,  browserBar:'bottom', browserTone:'safari' },
+      { id:'ios15saf', name:'iPhone 15 · Safari',  w:393, h:852,  kind:'iphone',   visible:707,  browserBar:'bottom', browserTone:'safari' },
       { id:'ios15chr', name:'iPhone 15 · Chrome',  w:393, h:852,  kind:'iphone',   visible:707,  browserBar:'top',    browserTone:'chrome' },
       { id:'iossesaf', name:'iPhone SE · Safari',  w:375, h:667,  kind:'iphonese', visible:553,  browserBar:'bottom', browserTone:'safari' },
       { id:'iossechr', name:'iPhone SE · Chrome',  w:375, h:667,  kind:'iphonese', visible:601,  browserBar:'top',    browserTone:'chrome' },
@@ -433,7 +440,7 @@
       c.toolBar.className = 'br-bar ' + b.tone + ' ' + b.bar;
       c.barL.textContent = b.tone === 'safari' ? 'aA' : '🔒';
       c.barR.textContent = b.tone === 'safari' ? '⤴' : '⋮';
-      const statusH = Math.round(Math.min(28, Math.max(20, e.h * 0.03)));
+      const statusH = c.rot ? 20 : (STATUS[d.kind] || Math.round(Math.min(28, Math.max(20, e.h * 0.03))));
       const visH = b.visible;
       const chromeH = Math.max(46, e.h - visH);
       const toolbarH = Math.max(22, chromeH - statusH);
@@ -647,6 +654,9 @@
     cards.forEach(c => {
       c.viewport.style.width  = px(Math.round(c.shellW * zoom));
       c.viewport.style.height = px(Math.round(c.shellH * zoom));
+      // In the popular row the card is pinned to the phone's width so long names
+      // wrap instead of widening the card and pushing a phone onto a second line.
+      c.root.style.width = (c.rowId === 'popular') ? px(Math.round(c.shellW * zoom)) : '';
       c.shell.style.transform = 'scale(' + zoom + ')';
     });
     readout.textContent = Math.round(zoom * 100) + '%';
@@ -785,12 +795,6 @@
     const row = rowMap.popular, gaps = 30 * (row.cards.length - 1) + 60;
     const total = row.cards.reduce((n, c) => n + c.shellW, 0);
     setZoom((stage.clientWidth - gaps) / total, false);
-    for(let i = 0; i < 4; i++){
-      const need = row.cards.reduce((n, c) => n + c.root.offsetWidth, 0) + gaps;
-      const avail = row.track.clientWidth;
-      if(need <= avail) break;
-      setZoom(zoom * (avail - gaps) / (need - gaps), false);
-    }
   }
 
   let zoomBeforePopular = 0;
