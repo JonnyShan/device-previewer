@@ -133,7 +133,7 @@
   .row-track::-webkit-scrollbar-thumb{background:#28313d;border-radius:99px;border:2px solid var(--bg)}
   .row-track::-webkit-scrollbar-thumb:hover{background:#3a4654}
 
-  .row[data-id="popular"] .row-track{display:grid;grid-template-columns:repeat(3,max-content);justify-items:center;row-gap:34px}
+  .row[data-id="popular"] .row-track{flex-wrap:wrap;justify-content:center;overflow-x:hidden;row-gap:34px}
 
   .device{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px}
   .viewport{position:relative}
@@ -141,6 +141,8 @@
 
   .screen{position:absolute;top:0;background:linear-gradient(160deg,#16161a,#050507 70%);box-shadow:0 0 0 2px var(--bezel-edge),0 30px 60px -20px rgba(0,0,0,.8),inset 0 1px 1px rgba(255,255,255,.05)}
   .screen iframe{position:absolute;border:0;background:#fff;display:block}
+  /* clips the page + browser bars to the phone's screen curve */
+  .glass{position:absolute;overflow:hidden;background:#000}
   .screen .feature{position:absolute;pointer-events:none;z-index:3}
   .device.rot .feature{display:none}
 
@@ -418,7 +420,8 @@
     }
 
     Object.assign(c.screen.style, { left:px(screenLeft), width:px(screenW), height:px(screenH), borderRadius:px(d.radius) });
-    Object.assign(c.frame.style,  { left:px(d.side), top:px(d.top), width:px(e.w), height:px(e.h), borderRadius:px(d.sr) });
+    Object.assign(c.glass.style,  { left:px(d.side), top:px(d.top), width:px(e.w), height:px(e.h), borderRadius:px(d.sr) });
+    Object.assign(c.frame.style,  { left:'0', top:'0', width:px(e.w), height:px(e.h), borderRadius:'0' });
     Object.assign(c.shell.style,  { width:px(shellW), height:px(shellH) });
     c.shellW = shellW; c.shellH = shellH;
     c.dimsEl.textContent = e.w + ' × ' + e.h;
@@ -434,21 +437,17 @@
       const visH = b.visible;
       const chromeH = Math.max(46, e.h - visH);
       const toolbarH = Math.max(22, chromeH - statusH);
-      c.statusBar.style.left = px(d.side); c.statusBar.style.width = px(e.w); c.statusBar.style.height = px(statusH);
-      c.toolBar.style.left   = px(d.side); c.toolBar.style.width   = px(e.w); c.toolBar.style.height   = px(toolbarH);
+      c.statusBar.style.left = '0'; c.statusBar.style.width = px(e.w); c.statusBar.style.height = px(statusH);
+      c.toolBar.style.left   = '0'; c.toolBar.style.width   = px(e.w); c.toolBar.style.height   = px(toolbarH);
+      c.statusBar.style.top = '0';
       if(b.bar === 'top'){
-        c.statusBar.style.top = px(d.top);
-        c.toolBar.style.top   = px(d.top + statusH);
-        c.frame.style.top     = px(d.top + statusH + toolbarH);
+        c.toolBar.style.top = px(statusH);
+        c.frame.style.top   = px(statusH + toolbarH);
       } else {
-        c.statusBar.style.top = px(d.top);
-        c.frame.style.top     = px(d.top + statusH);
-        c.toolBar.style.top   = px(d.top + statusH + visH);
+        c.frame.style.top   = px(statusH);
+        c.toolBar.style.top = px(statusH + visH);
       }
-      c.frame.style.left = px(d.side);
-      c.frame.style.width = px(e.w);
       c.frame.style.height = px(visH);
-      c.frame.style.borderRadius = '0';
       c.dimsEl.textContent = e.w + ' × ' + visH + ' usable · ' + Math.round(visH / e.h * 100) + '% of ' + e.h;
     }
   }
@@ -480,9 +479,11 @@
     frame.setAttribute('title', d.name + ' preview');
     frame.setAttribute('referrerpolicy','no-referrer-when-downgrade');
     frame.setAttribute('loading','eager');
-    screen.appendChild(frame);
+    const glass = el('div','glass');
+    glass.appendChild(frame);
+    screen.appendChild(glass);
 
-    const c = { d, root, viewport, shell, screen, frame, rot:!!opts.rot, enabled:true,
+    const c = { d, root, viewport, shell, screen, frame, glass, rot:!!opts.rot, enabled:true,
                 custom:!!opts.custom, rowId:opts.rowId };
 
     addFeature(screen, d);
@@ -496,8 +497,8 @@
       const ri = el('span','br-ic'); c.barR = ri;
       bar.appendChild(li); bar.appendChild(addr); bar.appendChild(ri);
       c.toolBar = bar;
-      screen.appendChild(c.statusBar);
-      screen.appendChild(c.toolBar);
+      glass.appendChild(c.statusBar);
+      glass.appendChild(c.toolBar);
     }
 
     shell.appendChild(screen);
@@ -778,12 +779,34 @@
     cards.forEach(applyGeometry); layout();
     if(save !== false) saveState();
   }
+  // Shrink until all 6 sit on one line. Measured, not calculated: the name labels
+  // don't scale with zoom and are often wider than the phone itself.
+  function fitPopularRow(){
+    const row = rowMap.popular, gaps = 30 * (row.cards.length - 1) + 60;
+    const total = row.cards.reduce((n, c) => n + c.shellW, 0);
+    setZoom((stage.clientWidth - gaps) / total, false);
+    for(let i = 0; i < 4; i++){
+      const need = row.cards.reduce((n, c) => n + c.root.offsetWidth, 0) + gaps;
+      const avail = row.track.clientWidth;
+      if(need <= avail) break;
+      setZoom(zoom * (avail - gaps) / (need - gaps), false);
+    }
+  }
+
+  let zoomBeforePopular = 0;
   function setPopular(on, save){
     popularMode = on;
     const btn = document.getElementById('popToggle');
     btn.classList.toggle('on', on);
     btn.textContent = on ? '← Back to all devices' : '★ Most popular phones';
     Object.values(rowMap).forEach(refreshRow);
+    // Fit all 6 across the window; put the old zoom back on the way out.
+    if(on){
+      zoomBeforePopular = zoom;
+      fitPopularRow();
+    } else if(zoomBeforePopular){
+      setZoom(zoomBeforePopular, false);
+    }
     if(save !== false) saveState();
   }
   document.getElementById('barsToggle').addEventListener('click', () => setBars(!showBars));
